@@ -1,8 +1,10 @@
-# ByakuganQuery
+# QueryValidator
 
-Tool untuk validasi query SQL dan MongoDB sebelum dijalankan ke database.
+Tool for validating SQL and MongoDB queries before executing them on the database.
 
-## Cara Jalankan
+## How to Run
+
+### Local
 
 ```bash
 cd query-validator
@@ -10,15 +12,39 @@ npm install
 npm run dev
 ```
 
-Buka `http://localhost:3001`
+Open `http://localhost:3001`
 
-## Fitur
+### Docker
 
-### 1. Validasi Query
+```bash
+cd query-validator
 
-- Tulis query di editor (kiri)
-- Klik **Validate All** atau tekan `⌘ Enter` / `Ctrl + Enter`
-- Hasil validasi muncul di panel kanan
+# Build image
+docker build -t query-validator .
+
+# Run container
+docker run -d -p 3001:3001 --env-file .env --name query-validator query-validator
+```
+
+Open `http://localhost:3001`
+
+**Docker Commands:**
+
+| Action | Command |
+|--------|---------|
+| Stop | `docker stop query-validator` |
+| Start | `docker start query-validator` |
+| Logs | `docker logs -f query-validator` |
+| Remove | `docker rm -f query-validator` |
+| Rebuild | `docker build -t query-validator . && docker rm -f query-validator && docker run -d -p 3001:3001 --env-file .env --name query-validator query-validator` |
+
+## Features
+
+### 1. Query Validation
+
+- Write query in the editor (left panel)
+- Click **Validate All** or press `⌘ Enter` / `Ctrl + Enter`
+- Validation results appear in the right panel
 
 ### 2. Database Support
 
@@ -28,18 +54,18 @@ Buka `http://localhost:3001`
 | MySQL | `node-sql-parser` |
 | MongoDB | Custom JSON parser |
 
-Pilih database di tombol **PostgreSQL / MySQL / MongoDB** di atas editor.
+Select database using the **PostgreSQL / MySQL / MongoDB** button above the editor.
 
 ### 3. Schema Validation
 
-Schema digunakan untuk cek apakah table dan column yang di-query ada di database.
+Schema is used to check if the queried tables and columns exist in the database.
 
-**Cara pakai:**
-1. Klik panah di **Schema Editor** (bawah editor query)
-2. Edit JSON schema manual, atau
-3. Upload file `.json` via tombol upload
+**How to use:**
+1. Click the arrow in the **Schema Editor** (below the query editor)
+2. Edit the JSON schema manually, or
+3. Upload a `.json` file via the upload button
 
-**Format schema:**
+**Schema format:**
 ```json
 {
   "tables": {
@@ -56,54 +82,54 @@ Schema digunakan untuk cek apakah table dan column yang di-query ada di database
 
 ### 4. File Queue
 
-Upload beberapa file query sekaligus:
-1. Klik **Upload Files** atau drag & drop file ke editor
-2. File muncul di queue (bawah editor)
-3. Klik **Validate All** → semua file + editor query di-validate
+Upload multiple query files at once:
+1. Click **Upload Files** or drag & drop files into the editor
+2. Files appear in the queue (below the editor)
+3. Click **Validate All** → all files + editor query are validated
 
-**Format file:** `.sql`, `.js`, `.json`, `.txt`
+**Supported file formats:** `.sql`, `.js`, `.json`, `.txt`
 
-### 5. Template Query
+### 5. Query Templates
 
-Klik tombol template di atas editor untuk load contoh query:
-- `SELECT` — contoh select dengan WHERE, ORDER BY, LIMIT
-- `INSERT` — contoh insert
-- `UPDATE` — contoh update
-- `DELETE` — contoh delete
-- `JOIN` — contoh join
-- `SUBQUERY` — contoh subquery
-- `AGG` — contoh aggregate (GROUP BY, HAVING)
+Click the template button above the editor to load sample queries:
+- `SELECT` — select with WHERE, ORDER BY, LIMIT
+- `INSERT` — insert example
+- `UPDATE` — update example
+- `DELETE` — delete example
+- `JOIN` — join example
+- `SUBQUERY` — subquery example
+- `AGG` — aggregate example (GROUP BY, HAVING)
 
-## Hasil Validasi
+## Validation Results
 
 ### Validation Issues
 
-| Tipe | Warna | Keterangan |
-|------|-------|------------|
-| Error | Merah | Query tidak valid (syntax error, table/column tidak ada) |
-| Warning | Kuning | Potensi masalah (missing LIMIT, SELECT *) |
-| Schema | Oranye | Table/column tidak ditemukan di schema |
-| Optimization | Hijau | Saran optimasi query |
-| Suggestion | Biru | Saran perbaikan error |
+| Type | Color | Description |
+|------|-------|-------------|
+| Error | Red | Invalid query (syntax error, missing table/column) |
+| Warning | Yellow | Potential issues (missing LIMIT, SELECT *) |
+| Schema | Orange | Table/column not found in schema |
+| Optimization | Green | Query optimization suggestions |
+| Suggestion | Blue | Error fix suggestions |
 
 ### Tuning Suggestions
 
-| Section | Keterangan |
-|---------|------------|
-| Rewrite Suggestions | Cara rewrite query agar lebih efisien |
-| Index Recommendations | Index yang sebaiknya dibuat |
-| Tips | Tips tambahan untuk performa query |
+| Section | Description |
+|---------|-------------|
+| Rewrite Suggestions | How to rewrite query for better efficiency |
+| Index Recommendations | Indexes that should be created |
+| Tips | Additional tips for query performance |
 
 ## Keyboard Shortcuts
 
-| Shortcut | Fungsi |
-|----------|--------|
+| Shortcut | Function |
+|----------|----------|
 | `⌘ Enter` / `Ctrl + Enter` | Validate All |
-| `Tab` | Insert tab di editor |
+| `Tab` | Insert tab in editor |
 | `⌘ Z` / `Ctrl + Z` | Undo |
 | `⌘ Shift Z` / `Ctrl + Shift Z` | Redo |
 
-## Contoh Query yang Bisa Divalidate
+## Sample Queries
 
 ### PostgreSQL / MySQL
 
@@ -111,7 +137,7 @@ Klik tombol template di atas editor untuk load contoh query:
 -- Valid
 SELECT id, name FROM users WHERE status = 'active';
 
--- Error: table tidak ada
+-- Error: table does not exist
 SELECT * FROM non_existent_table;
 
 -- Warning: SELECT *
@@ -120,7 +146,7 @@ SELECT * FROM users;
 -- Warning: missing LIMIT
 SELECT * FROM users ORDER BY created_at DESC;
 
--- Schema error: column tidak ada
+-- Schema error: column does not exist
 SELECT wrong_column FROM users;
 ```
 
@@ -135,8 +161,8 @@ SELECT wrong_column FROM users;
 
 ## Troubleshooting
 
-| Masalah | Solusi |
-|---------|--------|
-| Query tidak divalidate | Pastikan fokus di editor, lalu `⌘ Enter` |
-| Schema error padahal table ada | Cek apakah schema sudah benar dan table ada di JSON |
-| File upload tidak muncul | Pastikan file berekstensi `.sql`, `.js`, `.json`, atau `.txt` |
+| Issue | Solution |
+|-------|----------|
+| Query not validated | Make sure editor is focused, then press `⌘ Enter` |
+| Schema error even though table exists | Check if the schema is correct and table is defined in JSON |
+| Uploaded file not showing | Ensure file has `.sql`, `.js`, `.json`, or `.txt` extension |
