@@ -1,0 +1,16 @@
+{
+  "connections": [
+    {
+      "id": "mr9yk8e699n4ti",
+      "name": "test_db",
+      "type": "postgresql",
+      "host": "10.194.5.13",
+      "port": 5432,
+      "database": "tx_2",
+      "username": "postgres",
+      "password": "8262500e1666e00b2c29b83d454e57e3:13ad4e6dc65d5f83c5e1f9a17e101e62",
+      "ssl": false,
+      "createdAt": "2026-07-07T01:16:19.711Z"
+    }
+  ]
+}

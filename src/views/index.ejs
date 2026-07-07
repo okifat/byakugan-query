@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Byakugan Query</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sql/sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  <script>
+    window.USER = <%- JSON.stringify(user || null) %>;
+  </script>
+</head>
+<body>
+
+  <div class="ambient-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="relative z-10 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="header-glass">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="logo-icon">
+            <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z"/>
+              <circle cx="12" cy="12" r="3" fill="currentColor"/>
+              <circle cx="12" cy="12" r="1" fill="white"/>
+            </svg>
+          </div>
+          <h1 class="text-lg font-bold text-white tracking-tight" style="font-family: 'Space Grotesk', sans-serif;">Byakugan Query</h1>
+        </div>
+        <div class="flex items-center gap-3">
+          <!-- LOGIN DISABLED — uncomment to re-enable
+          <% if (user) { %>
+            <div class="flex items-center gap-2 ml-2 pl-3 border-l border-white/10">
+              <div class="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white">
+                <%= user.fullName ? user.fullName.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase() %>
+              </div>
+              <div class="hidden sm:block">
+                <div class="text-xs font-medium text-slate-300"><%= user.fullName || user.username %></div>
+                <div class="text-[10px] text-slate-500"><%= user.email || user.username %></div>
+              </div>
+              <a href="/logout" class="ml-1 p-1.5 rounded-lg hover:bg-white/5 text-slate-500 hover:text-slate-300 transition-colors" title="Logout">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+              </a>
+            </div>
+          <% } else { %>
+            <a href="/login" class="action-btn" style="padding: 6px 14px;">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+              </svg>
+              Login
+            </a>
+          <% } %>
+          -->
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-4 flex flex-col gap-4 min-h-0">
+
+      <!-- Top Bar: DB Selector + Connection (if logged in) + Actions -->
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="db-selector">
+          <button onclick="selectDB('postgresql')" data-db="postgresql" class="db-pill active">
+            <span class="db-dot pg"></span>
+            PostgreSQL
+          </button>
+          <button onclick="selectDB('mysql')" data-db="mysql" class="db-pill">
+            <span class="db-dot mysql"></span>
+            MySQL
+          </button>
+          <button onclick="selectDB('mongodb')" data-db="mongodb" class="db-pill">
+            <span class="db-dot mongo"></span>
+            MongoDB
+          </button>
+        </div>
+
+        <!-- CONNECTION DISABLED — uncomment to re-enable
+        <% if (user) { %>
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] text-slate-500 font-medium uppercase tracking-wider">DB</span>
+          <select id="connectionSelect" class="connection-select" onchange="onConnectionChange()">
+            <option value="">No connection</option>
+          </select>
+          <button onclick="fetchSchemaFromConn()" id="fetchSchemaBtn" class="action-btn" disabled title="Ambil schema dari DB yang dipilih (tables + columns) lalu isi ke Schema Editor">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+            </svg>
+            <span class="hidden sm:inline">Fetch Schema</span>
+          </button>
+          <button onclick="openConnectionModal()" class="action-btn" title="Kelola koneksi database">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <% } %>
+        -->
+
+        <div class="flex items-center gap-2 ml-auto">
+          <label class="action-btn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+            <span>Upload Files</span>
+            <input type="file" accept=".sql,.js,.json,.txt" multiple class="hidden" onchange="uploadFiles(event)">
+          </label>
+          <button onclick="validateAll()" id="validateBtn" class="btn-validate">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>Validate All</span>
+            <span id="queryCount" class="ml-1 px-1.5 py-0.5 rounded bg-white/10 text-[10px]">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Content Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
+
+        <!-- LEFT: Editor + File Queue -->
+        <div class="flex flex-col gap-4">
+
+          <!-- Editor Card -->
+          <div class="glass-card overflow-hidden flex flex-col" style="height: 400px;">
+            <div class="card-header">
+              <div class="flex items-center gap-3">
+                <div class="flex gap-1.5">
+                  <span class="dot-red"></span>
+                  <span class="dot-yellow"></span>
+                  <span class="dot-green"></span>
+                </div>
+                <span class="text-xs text-slate-400 font-mono">Write query</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="editorCount" class="text-[11px] text-slate-500">0 queries</span>
+              </div>
+            </div>
+            <div id="dropZone" class="drop-zone">
+              <div class="drop-zone-inner">
+                <svg class="w-10 h-10 text-violet-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                <p class="text-sm font-medium text-slate-300">Drop files here</p>
+                <p class="text-xs text-slate-500">.sql, .js, .json, .txt</p>
+              </div>
+            </div>
+            <div id="editorWrap" class="flex-1 min-h-0">
+              <textarea id="queryInput"></textarea>
+            </div>
+          </div>
+
+          <!-- File Queue -->
+          <div class="glass-card overflow-hidden">
+            <div class="card-header">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <span class="text-xs font-medium text-slate-300">Uploaded Files</span>
+                <span id="fileCount" class="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 font-semibold">0</span>
+              </div>
+              <label class="action-btn" style="padding: 5px 10px; font-size: 11px;">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Add Files
+                <input type="file" accept=".sql,.js,.json,.txt" multiple class="hidden" onchange="uploadFiles(event)">
+              </label>
+            </div>
+            <div id="fileQueue" class="file-queue">
+              <div class="file-empty">
+                <svg class="w-8 h-8 text-slate-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+                <span class="text-xs text-slate-600">No files uploaded yet</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Schema -->
+          <div class="glass-card overflow-hidden">
+            <button onclick="toggleSchema()" class="w-full card-header cursor-pointer hover:bg-white/[0.02] transition-colors">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                </svg>
+                <span class="text-sm font-medium text-slate-300">Schema Definition</span>
+                <span id="schemaBadge" class="text-[10px] px-1.5 py-0.5 rounded-full bg-violet-500/10 text-violet-400 font-medium hidden">AUTO</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-violet-500/10 text-violet-400 font-medium">optional</span>
+              </div>
+              <svg id="schemaChevron" class="w-4 h-4 text-slate-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div id="schemaPanel" class="schema-hidden">
+              <div class="px-4 py-2 border-t border-white/5 flex items-center justify-between bg-white/[0.01]">
+                <span class="text-[11px] text-slate-500">Paste JSON or upload file</span>
+                <label class="upload-btn">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                  </svg>
+                  Upload
+                  <input type="file" accept=".json" class="hidden" onchange="uploadSchema(event)">
+                </label>
+              </div>
+              <div class="editor-area" style="height: 160px;">
+                <textarea id="schemaInput"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Templates -->
+          <div class="flex flex-wrap gap-2">
+            <button onclick="loadTemplate('select')" class="tmpl-btn">SELECT</button>
+            <button onclick="loadTemplate('insert')" class="tmpl-btn">INSERT</button>
+            <button onclick="loadTemplate('update')" class="tmpl-btn">UPDATE</button>
+            <button onclick="loadTemplate('delete')" class="tmpl-btn">DELETE</button>
+            <button onclick="loadTemplate('join')" class="tmpl-btn">JOIN</button>
+            <button onclick="loadTemplate('subquery')" class="tmpl-btn">SUBQUERY</button>
+            <button onclick="loadTemplate('agg')" class="tmpl-btn">AGGREGATE</button>
+          </div>
+        </div>
+
+        <!-- RIGHT: Results -->
+        <div class="flex flex-col min-h-0">
+          <div class="flex flex-col gap-3 flex-1 overflow-y-auto" id="resultsArea">
+            <div id="summaryBar" class="hidden glass-card p-4 animate-up">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="text-sm font-semibold text-slate-300">Results</span>
+                  <span id="summaryTotal" class="summary-badge bg-slate-500/10 text-slate-400"></span>
+                  <span id="summaryValid" class="summary-badge bg-emerald-500/10 text-emerald-400"></span>
+                  <span id="summaryInvalid" class="summary-badge bg-red-500/10 text-red-400"></span>
+                </div>
+                <button onclick="clearResults()" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">Clear</button>
+              </div>
+            </div>
+            <div id="emptyState" class="empty-state flex-1">
+              <div class="empty-icon">
+                <svg class="w-10 h-10 text-violet-400/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <h3 class="text-base font-semibold text-slate-300 mb-1">Ready to validate</h3>
+              <p class="text-sm text-slate-500">Write queries or upload files, then click Validate</p>
+            </div>
+            <div id="loadingState" class="glass-card p-10 text-center hidden">
+              <div class="pulse-ring mx-auto mb-4">
+                <div class="pulse-dot"></div>
+              </div>
+              <p class="text-sm text-slate-400 font-medium">Analyzing...</p>
+            </div>
+            <div id="resultsList" class="space-y-3"></div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <footer class="border-t border-white/5 py-3 mt-auto">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between text-[11px] text-slate-600">
+        <span>Byakugan Query</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- CONNECTION MODAL DISABLED — uncomment to re-enable
+  <div id="connectionModal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-white">My Connections</h2>
+        <button onclick="closeConnectionModal()" class="p-1 rounded hover:bg-white/5 text-slate-400 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div id="connectionList" class="space-y-2 mb-4 max-h-60 overflow-y-auto"></div>
+      <div class="border-t border-white/5 pt-4">
+        <h3 id="connFormTitle" class="text-sm font-medium text-slate-300 mb-3">Add New Connection</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[11px] text-slate-500 mb-1 block">Name</label>
+            <input id="connName" class="modal-input" placeholder="Production DB">
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-500 mb-1 block">Type</label>
+            <select id="connType" class="modal-input">
+              <option value="postgresql">PostgreSQL</option>
+              <option value="mysql">MySQL</option>
+              <option value="mongodb">MongoDB</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-500 mb-1 block">Host</label>
+            <input id="connHost" class="modal-input" placeholder="localhost">
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-500 mb-1 block">Port</label>
+            <input id="connPort" class="modal-input" placeholder="5432">
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-500 mb-1 block">Database</label>
+            <input id="connDatabase" class="modal-input" placeholder="mydb">
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-500 mb-1 block">Username</label>
+            <input id="connUsername" class="modal-input" placeholder="user">
+          </div>
+          <div class="col-span-2">
+            <label class="text-[11px] text-slate-500 mb-1 block">Password</label>
+            <input id="connPassword" type="password" class="modal-input" placeholder="password">
+          </div>
+          <div class="col-span-2 flex items-center gap-2">
+            <input id="connSSL" type="checkbox" class="rounded">
+            <label for="connSSL" class="text-[11px] text-slate-400">Use SSL</label>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 mt-3">
+          <button onclick="testNewConnection()" class="action-btn" style="font-size: 12px;">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Test
+          </button>
+          <button onclick="addConnection()" id="connSubmitBtn" class="btn-validate" style="font-size: 12px; padding: 6px 14px;">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add Connection
+          </button>
+          <button onclick="cancelEdit()" id="connCancelBtn" class="action-btn hidden" style="font-size: 12px;">
+            Batal
+          </button>
+        </div>
+        <div id="connTestResult" class="mt-2 text-xs hidden"></div>
+      </div>
+    </div>
+  </div>
+  -->
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
