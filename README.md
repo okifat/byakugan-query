@@ -1,4 +1,4 @@
-# QueryValidator
+# ByakuganQuery
 
 Tool untuk validasi query SQL dan MongoDB sebelum dijalankan ke database.
 
